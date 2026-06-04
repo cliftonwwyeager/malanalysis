@@ -1,2 +1,210 @@
-# malanalysis
-8B parameter model for executable analysis
+# MGNN
+
+MGNN is a local Ollama model package for defensive executable analysis. It pairs
+a specialized 8B GGUF model with a static metadata helper so analysts can triage
+submitted executables without executing them.
+
+## Quick Start
+
+Place your specialized GGUF model in the local model directory:
+
+```bash
+cp /path/to/mgnn-8b-instruct.gguf models/mgnn-8b-instruct.gguf
+```
+
+Import it into Ollama:
+
+```bash
+ollama create mgnn:8b -f Modelfile
+```
+
+Analyze an executable:
+
+```bash
+python3 mgnn.py analyze /path/to/sample.exe --model mgnn:8b
+```
+
+## What MGNN Produces
+
+MGNN is intended to return a single JSON object containing:
+
+- detection verdict: `benign`, `suspicious`, `malware`, or `unknown`
+- confidence and risk score
+- executable type and platform
+- malware family and category, using `unknown` when evidence is insufficient
+- technical summary and description
+- static-analysis evidence
+- indicators such as hashes, strings, packer hints, or IOCs
+- recommended defensive actions
+- Markdown report text for analyst handoff
+
+The expected output schema is stored in
+[`schemas/analysis.schema.json`](schemas/analysis.schema.json).
+
+## Repository Layout
+
+```text
+.
+|-- Modelfile
+|-- README.md
+|-- LICENSE
+|-- mgnn.py
+|-- mgnn_features.py
+|-- models/
+|   `-- .gitkeep
+`-- schemas/
+    `-- analysis.schema.json
+```
+
+Large local model files are ignored by `.gitignore`. Keep GGUF files under
+`models/` on the analysis host.
+
+## Ollama Model Package
+
+The included [`Modelfile`](Modelfile) imports:
+
+```text
+FROM ./models/mgnn-8b-instruct.gguf
+```
+
+It also configures a low-temperature, evidence-first generation profile:
+
+```text
+PARAMETER temperature 0.1
+PARAMETER top_p 0.9
+PARAMETER top_k 20
+PARAMETER repeat_penalty 1.05
+PARAMETER num_ctx 8192
+PARAMETER num_predict 1200
+PARAMETER seed 42
+```
+
+The system prompt instructs the model to work only from static metadata and to
+return JSON without Markdown fences or unsupported claims.
+
+## CLI Commands
+
+Extract static metadata only:
+
+```bash
+python3 mgnn.py features /path/to/sample.exe
+```
+
+Build a prompt for manual Ollama use:
+
+```bash
+python3 mgnn.py prompt /path/to/sample.exe > prompt.txt
+ollama run mgnn:8b < prompt.txt
+```
+
+Analyze through Ollama:
+
+```bash
+python3 mgnn.py analyze /path/to/sample.exe --model mgnn:8b
+```
+
+Analyze a directory recursively as JSONL:
+
+```bash
+python3 mgnn.py analyze /path/to/samples --recursive --jsonl --model mgnn:8b
+```
+
+Run a metadata-only heuristic baseline:
+
+```bash
+python3 mgnn.py baseline /path/to/sample.exe
+```
+
+Print the output schema:
+
+```bash
+python3 mgnn.py schema
+```
+
+## Static Features
+
+The helper never executes submitted files. It currently extracts:
+
+- SHA-256 hash
+- file size and sampled byte count
+- overall byte entropy and high-entropy flag
+- printable strings
+- suspicious string categories
+- PE header fields, section entropy, and packer hints
+- ELF class, endianness, machine type, object type, and entry point
+- Mach-O and universal Mach-O header detection
+- script shebang detection
+
+These features are useful for triage and report generation, but they are not a
+replacement for behavioral sandboxing, memory forensics, or reverse engineering.
+
+## Output Example
+
+```json
+{
+  "verdict": "suspicious",
+  "confidence": 0.74,
+  "risk_score": 68,
+  "executable_type": "PE",
+  "platform": "windows",
+  "malware_family": "unknown",
+  "malware_category": "packed_or_obfuscated",
+  "summary": "The file has high-entropy sections and suspicious execution strings, but family attribution is not supported by the metadata.",
+  "technical_description": "Static metadata indicates a Windows PE executable with packer-like entropy and process execution indicators.",
+  "evidence": [
+    "PE header detected",
+    "High entropy section observed",
+    "Suspicious string category: execution"
+  ],
+  "indicators": [
+    "sha256:..."
+  ],
+  "recommended_actions": [
+    "Quarantine the file pending sandbox analysis",
+    "Correlate the SHA-256 hash against endpoint and SIEM telemetry"
+  ],
+  "report_markdown": "## MGNN Executable Analysis Report\n..."
+}
+```
+
+## Analyst Guidance
+
+Use MGNN as a triage accelerator, not as a single source of truth.
+
+- Validate suspicious or malicious findings with isolated sandbox analysis.
+- Correlate hashes, strings, and paths with EDR, SIEM, and threat intelligence.
+- Prefer `unknown` family attribution when metadata does not support a specific
+  family.
+- Treat packed, truncated, or malformed files conservatively.
+- Keep submitted executables in controlled analysis storage and do not execute
+  them on analyst workstations.
+
+## Model Improvement
+
+For better detection and reporting quality, fine-tune or adapt the underlying
+8B model with examples that include:
+
+- static metadata generated by this helper
+- known-good benign executables across platforms
+- malware labeled by family, category, platform, and capability
+- packed or obfuscated samples with conservative labels
+- analyst-written technical summaries and remediation guidance
+- negative examples where attribution must remain `unknown`
+- JSON-only outputs matching the schema exactly
+
+High-quality training data should reward calibrated uncertainty. The model
+should not guess a malware family or runtime behavior when the metadata only
+supports a broader risk category.
+
+## Limitations
+
+- Static metadata cannot prove runtime behavior.
+- Packed, encrypted, truncated, or malformed samples may reduce confidence.
+- Very large files are sampled for efficiency.
+- Family attribution requires strong indicators; otherwise `unknown` is
+  preferred.
+- End-to-end quality depends on Ollama availability and the imported model.
+
+## License
+
+See [`LICENSE`](LICENSE).
