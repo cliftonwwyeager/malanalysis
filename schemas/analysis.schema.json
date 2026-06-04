@@ -1,0 +1,74 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "verdict",
+    "confidence",
+    "risk_score",
+    "executable_type",
+    "platform",
+    "malware_family",
+    "malware_category",
+    "summary",
+    "technical_description",
+    "evidence",
+    "indicators",
+    "recommended_actions",
+    "report_markdown"
+  ],
+  "properties": {
+    "verdict": {
+      "type": "string",
+      "enum": ["benign", "suspicious", "malware", "unknown"]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "risk_score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "executable_type": {
+      "type": "string"
+    },
+    "platform": {
+      "type": "string"
+    },
+    "malware_family": {
+      "type": "string"
+    },
+    "malware_category": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "technical_description": {
+      "type": "string"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "indicators": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "recommended_actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "report_markdown": {
+      "type": "string"
+    }
+  }
+}
