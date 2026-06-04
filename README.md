@@ -1,6 +1,6 @@
-# MGNN
+# Malanalysis
 
-MGNN is a local Ollama model package for defensive executable analysis. It pairs
+Malanalysis is a local Ollama model package for defensive executable analysis. It pairs
 a specialized 8B GGUF model with a static metadata helper so analysts can triage
 submitted executables without executing them.
 
@@ -9,24 +9,24 @@ submitted executables without executing them.
 Place your specialized GGUF model in the local model directory:
 
 ```bash
-cp /path/to/mgnn-8b-instruct.gguf models/mgnn-8b-instruct.gguf
+cp /path/to/malanalysis-8b-instruct.gguf models/malanalysis-8b-instruct.gguf
 ```
 
 Import it into Ollama:
 
 ```bash
-ollama create mgnn:8b -f Modelfile
+ollama create malanalysis:8b -f Modelfile
 ```
 
 Analyze an executable:
 
 ```bash
-python3 mgnn.py analyze /path/to/sample.exe --model mgnn:8b
+python3 malanalysis.py analyze /path/to/sample.exe --model malanalysis:8b
 ```
 
-## What MGNN Produces
+## What Malanalysis Produces
 
-MGNN is intended to return a single JSON object containing:
+Malanalysis is intended to return a single JSON object containing:
 
 - detection verdict: `benign`, `suspicious`, `malware`, or `unknown`
 - confidence and risk score
@@ -48,8 +48,8 @@ The expected output schema is stored in
 |-- Modelfile
 |-- README.md
 |-- LICENSE
-|-- mgnn.py
-|-- mgnn_features.py
+|-- malanalysis.py
+|-- features.py
 |-- models/
 |   `-- .gitkeep
 `-- schemas/
@@ -64,7 +64,7 @@ Large local model files are ignored by `.gitignore`. Keep GGUF files under
 The included [`Modelfile`](Modelfile) imports:
 
 ```text
-FROM ./models/mgnn-8b-instruct.gguf
+FROM ./models/malanalysis-8b-instruct.gguf
 ```
 
 It also configures a low-temperature, evidence-first generation profile:
@@ -87,38 +87,38 @@ return JSON without Markdown fences or unsupported claims.
 Extract static metadata only:
 
 ```bash
-python3 mgnn.py features /path/to/sample.exe
+python3 malanalysis.py features /path/to/sample.exe
 ```
 
 Build a prompt for manual Ollama use:
 
 ```bash
-python3 mgnn.py prompt /path/to/sample.exe > prompt.txt
-ollama run mgnn:8b < prompt.txt
+python3 malanalysis.py prompt /path/to/sample.exe > prompt.txt
+ollama run malanalysis:8b < prompt.txt
 ```
 
 Analyze through Ollama:
 
 ```bash
-python3 mgnn.py analyze /path/to/sample.exe --model mgnn:8b
+python3 malanalysis.py analyze /path/to/sample.exe --model mgnn:8b
 ```
 
 Analyze a directory recursively as JSONL:
 
 ```bash
-python3 mgnn.py analyze /path/to/samples --recursive --jsonl --model mgnn:8b
+python3 malanalysis.py analyze /path/to/samples --recursive --jsonl --model mgnn:8b
 ```
 
 Run a metadata-only heuristic baseline:
 
 ```bash
-python3 mgnn.py baseline /path/to/sample.exe
+python3 malanalysis.py baseline /path/to/sample.exe
 ```
 
 Print the output schema:
 
 ```bash
-python3 mgnn.py schema
+python3 malanalysis.py schema
 ```
 
 ## Static Features
