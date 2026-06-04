@@ -163,13 +163,13 @@ replacement for behavioral sandboxing, memory forensics, or reverse engineering.
     "Quarantine the file pending sandbox analysis",
     "Correlate the SHA-256 hash against endpoint and SIEM telemetry"
   ],
-  "report_markdown": "## MGNN Executable Analysis Report\n..."
+  "report_markdown": "## Malanalysis Executable Analysis Report\n..."
 }
 ```
 
 ## Analyst Guidance
 
-Use MGNN as a triage accelerator, not as a single source of truth.
+Use Malanalysis as a triage accelerator, not as a single source of truth.
 
 - Validate suspicious or malicious findings with isolated sandbox analysis.
 - Correlate hashes, strings, and paths with EDR, SIEM, and threat intelligence.
